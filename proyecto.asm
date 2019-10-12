@@ -12,7 +12,7 @@
     cuerpo db 'O'   
     checkx db ? 
     checky db ? 
-    cont db 1 
+    cont db 4
     posx db ? 
     posy db ? 
     xa db ? 
@@ -260,16 +260,17 @@ moverAbajo:
     mov ah, 02h 
     int 21h 
     mov cl, cont 
-    call moverCuerpoArr
+    call moverCuerpoAb
     ret
 moverDerecha: 
     mov ah, 02h 
     mov dh, posy
     mov dl, posx 
     int 10h ; poner cursor donde irá caracter 
-    mov ah, 02h 
-    mov dl, 32
-    int 21h ; escribir espacio donde estaba el caracter 
+    mov xa, dl 
+    mov ya, dh ; capturar posicion anterior
+    mov xBorrar, dl
+    sub xBorrar, 1h ; borrar 
     sub posx, -1h ; subir la serpiente           
     mov ah, 02h 
     mov dh, posy
@@ -277,16 +278,19 @@ moverDerecha:
     int 10h ; poner cursor donde irá caracter           
     mov dl, cabeza
     mov ah, 02h 
-    int 21h          
+    int 21h  
+    mov cl, cont 
+    call moverCuerpoDer        
     ret
 moverIzquierda: 
     mov ah, 02h 
     mov dh, posy
     mov dl, posx 
     int 10h ; poner cursor donde irá caracter 
-    mov ah, 02h 
-    mov dl, 32
-    int 21h ; escribir espacio donde estaba el caracter 
+    mov xa, dl 
+    mov ya, dh ; capturar posicion anterior
+    mov xBorrar, dl
+    sub xBorrar, -1h ; borrar 
     sub posx, 1h ; subir la serpiente           
     mov ah, 02h 
     mov dh, posy
@@ -295,23 +299,26 @@ moverIzquierda:
     mov dl, cabeza
     mov ah, 02h 
     int 21h 
+    mov cl, cont 
+    call moverCuerpoIzq
     ret    
 moverCuerpoArr:
-cicloA:
-    mov ah, 02h 
-    mov dh, ya 
-    mov dl, xa 
-    int 10h ; posicion anterior         
-    mov dl, cuerpo 
-    int 21h 
-    sub ya, -1h ; TERMINA DE CORRER EL CUERPO                     
-    mov dh, yBorrar ;borrar 
-    mov dl, xa     
-    int 10h 
-    mov dl, 32
-    int 21h 
-    loop cicloA
-    ret
+    cicloA:
+        mov ah, 02h 
+        mov dh, ya 
+        mov dl, xa 
+        int 10h ; posicion anterior         
+        mov dl, cuerpo 
+        int 21h 
+        sub ya, -1h ; TERMINA DE CORRER EL CUERPO                     
+        mov dh, yBorrar ;borrar 
+        mov dl, xa     
+        int 10h 
+        mov dl, 32
+        int 21h 
+        sub yBorrar, -1h
+        loop cicloA
+        ret
 moverCuerpoAb:
     cicloAb:
         mov ah, 02h 
@@ -326,7 +333,42 @@ moverCuerpoAb:
         int 10h 
         mov dl, 32
         int 21h 
+        sub yBorrar, 1h 
         loop cicloAb
+        ret
+moverCuerpoDer:
+    cicloD:
+        mov ah, 02h 
+        mov dh, ya 
+        mov dl, xa 
+        int 10h ; posicion anterior         
+        mov dl, cuerpo 
+        int 21h 
+        sub xa, 1h ; TERMINA DE CORRER EL CUERPO                     
+        mov dh, ya ;borrar 
+        mov dl, xBorrar     
+        int 10h 
+        mov dl, 32
+        int 21h 
+        sub xBorrar, 1h
+        loop cicloD
+        ret
+moverCuerpoIzq:
+    cicloI:
+        mov ah, 02h 
+        mov dh, ya 
+        mov dl, xa 
+        int 10h ; posicion anterior         
+        mov dl, cuerpo 
+        int 21h 
+        sub xa, -1h ; TERMINA DE CORRER EL CUERPO                     
+        mov dh, ya ;borrar 
+        mov dl, xBorrar     
+        int 10h 
+        mov dl, 32
+        int 21h 
+        sub xBorrar, -1h
+        loop cicloI
         ret
 Mover endp    
 
