@@ -12,8 +12,13 @@
     cuerpo db 'O'   
     checkx db ? 
     checky db ? 
+    cont db 1 
     posx db ? 
     posy db ? 
+    xa db ? 
+    ya db ? 
+    xBorrar db ? 
+    yBorrar db ? 
     u db ? ; unidades por si ingresa numero de dos digitos 
     d db ? ; decenas por si ingresa numero de dos digitos     
     x db ? ; pared horizontal del juego 
@@ -23,12 +28,11 @@
     dos db 2    
     negar db -1 
 .stack 
-    ;dw   128  dup(0) 
+    dw   128  dup(0) 
 .code 
 programa: 
     mov ax, @data
     mov ds, ax  
-
     mov ax, ax  ;limpiar registros 
     
     ;solicitar del teclado x
@@ -82,8 +86,7 @@ programa:
     call SALTOLINEA  
 
     cmp checkx, 4 
-    jz Paso 
-
+    je Paso 
     ;MOSTRAR EL TABLERO DE JUEGO     
     mov ax, 0003H ;clearing the screen 
     int 10H     
@@ -116,30 +119,30 @@ programa:
     mov j, bl 
     mov i, 1h 
     call COLUMNA
-    
     ;empieza el juego    
     ;posicionar al centro a la serpiente 
     mov al, checkx 
     mov posx, al 
     mov bl, checky
-    mov posy, bl 
-    
+    mov posy, bl ; poner al centro la cabeza
     mov ah, 02h     
     mov dh, posx 
     mov dl, posy 
-    int 10h 
-
+    int 10h ; posicionar cursor 
     mov ah, 02h 
     mov dl, cabeza 
-    int 21h 
-    ;CICLO PRINCIPAL 
+    int 21h ; imprimir cabeza
+    mov dl, posy  
+    ;cuerpo 
+    ;CICLO PRINCIPAL ---------------------------------------------------------------------------------------------------
 ciclo:     
-    call LeerKbd
-
-    jmp ciclo     
-
-Paso: 
-    jmp DimensionesIncorrectas
+    call LeerKbd    
+    jmp ciclo  
+    ;CICLO PRINCIPAL ---------------------------------------------------------------------------------------------------
+Paso proc 
+    jmp dim 
+    ret
+    Paso endp    
 
 FILA:     
     mov ah, 02h         
@@ -163,17 +166,16 @@ COLUMNA:
     int 21h     
     inc i
     loop COLUMNA  
-    ret 
+    ret    
 
 LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE 
     mov ah, 00h
-    int 16h
-
+    int 16h; lee sin imprimir el caracter ingresado 
     cmp al, 'w'
     jne izquierda    
     cmp cabeza, 'v'
     je retrocedio
-    mov cabeza, '^'
+    mov cabeza, '^'    
     call moverArriba
     call validarArr 
     ret
@@ -220,32 +222,35 @@ salir:
 LeerKbd endp 
 
 Mover proc 
-moverArriba:
+moverArriba:    
     mov ah, 02h 
     mov dh, posy
     mov dl, posx 
-    int 10h ; poner cursor donde irá caracter 
-    mov ah, 02h 
-    mov dl, 32
-    int 21h ; escribir espacio en donde estaba el carcter 
-    sub posy, 1h ; subir la serpiente   
-    ; comparar con checky para ver si está en el borde         
+    int 10h ; poner cursor donde irá caracter     
+    mov xa, dl 
+    mov ya, dh ; capturar posicion anterior
+    mov yBorrar, dh
+    sub yBorrar, -1h ; borrar 
+    sub posy, 1h ; subir la serpiente       
     mov ah, 02h 
     mov dh, posy
     mov dl, posx
     int 10h ; poner cursor donde irá caracter 
     mov dl, cabeza
     mov ah, 02h 
-    int 21h 
+    int 21h     
+    mov cl, cont 
+    call moverCuerpoArr
     ret 
 moverAbajo: 
     mov ah, 02h 
     mov dh, posy
     mov dl, posx 
     int 10h ; poner cursor donde irá caracter 
-    mov ah, 02h 
-    mov dl, 32
-    int 21h ; escribir espacio donde estaba el caracter 
+    mov xa, dl 
+    mov ya, dh ; capturar posicion anterior
+    mov yBorrar, dh
+    sub yBorrar, 1h ; borrar 
     sub posy, -1h ; subir la serpiente           
     mov ah, 02h 
     mov dh, posy
@@ -254,6 +259,8 @@ moverAbajo:
     mov dl, cabeza
     mov ah, 02h 
     int 21h 
+    mov cl, cont 
+    call moverCuerpoArr
     ret
 moverDerecha: 
     mov ah, 02h 
@@ -289,7 +296,39 @@ moverIzquierda:
     mov ah, 02h 
     int 21h 
     ret    
-Mover endp     
+moverCuerpoArr:
+cicloA:
+    mov ah, 02h 
+    mov dh, ya 
+    mov dl, xa 
+    int 10h ; posicion anterior         
+    mov dl, cuerpo 
+    int 21h 
+    sub ya, -1h ; TERMINA DE CORRER EL CUERPO                     
+    mov dh, yBorrar ;borrar 
+    mov dl, xa     
+    int 10h 
+    mov dl, 32
+    int 21h 
+    loop cicloA
+    ret
+moverCuerpoAb:
+    cicloAb:
+        mov ah, 02h 
+        mov dh, ya 
+        mov dl, xa 
+        int 10h ; posicion anterior         
+        mov dl, cuerpo 
+        int 21h 
+        sub ya, 1h ; TERMINA DE CORRER EL CUERPO                     
+        mov dh, yBorrar ;borrar 
+        mov dl, xa     
+        int 10h 
+        mov dl, 32
+        int 21h 
+        loop cicloAb
+        ret
+Mover endp    
 
 validacion proc 
 validarArr:     
@@ -320,7 +359,7 @@ terminaJuego:
     int 21h 
     jmp FIN 
     
-SALTOLINEA:
+SALTOLINEA proc 
     ; imprimir un salto de linea antes de mostrar un resultado
     MOV DL, 10
     MOV AH, 02
@@ -329,15 +368,19 @@ SALTOLINEA:
     INT 21H
     XOR AX, AX 
     ret   
-    
-DimensionesIncorrectas:
+SALTOLINEA endp 
+
+dim proc far 
     lea dx, dimensiones
     mov ah, 09h 
     int 21h 
     jmp FIN 
+    ret
+dim endp 
 
-FIN: 
+FIN proc far  
     MOV AH, 4CH 
     INT 21H
+FIN endp
 
 end programa
