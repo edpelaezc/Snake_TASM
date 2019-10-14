@@ -11,8 +11,8 @@
     cabeza db '>'  
     cuerpo db 'O'   
     manzana db 207  
-    manzanaX db ? 
-    manzanaY db ? 
+    right db ?     
+    bottom  db ?     
     checkx db ? 
     checky db ? 
     long db 9
@@ -152,7 +152,7 @@ Paso proc
 Paso endp      
     ;CICLO PRINCIPAL ---------------------------------------------------------------------------------------------------
 ciclo:     
-    call LeerKbd    
+    call LeerKbd       
     jmp ciclo  
     ;CICLO PRINCIPAL ---------------------------------------------------------------------------------------------------
   
@@ -206,16 +206,36 @@ COLUMNA:
     loop COLUMNA  
     ret  
 
-imprimirManzanas: 
+imprimirManzanas proc 
+    mov bl, [x]    
+    mov [right], bl 
+    sub right, 4
+    mov bl, [y]    
+    mov [bottom], bl 
+    sub bottom, 4
     mov ah, 02h 
-    mov [manzanaX], 4 
-    mov [manzanaY], 3 
-    mov dh, manzanaX
-    mov dl, manzanaY
-    int 10h 
+    mov dh, 4
+    mov dl, 4
+    int 10h ; cursor 
     mov dl, [manzana]
+    int 21h ; primera manzana 
+    mov dh, 4
+    mov dl, right ; cursor 
+    int 10h 
+    mov dl, [manzana] ; segunda manzana 
+    int 21h 
+    mov dh, bottom 
+    mov dl, right ; cursor 
+    int 10h 
+    mov dl, [manzana] ; tercera manzana 
+    int 21h 
+    mov dh, bottom 
+    mov dl, 4 ; cursor 
+    int 10h 
+    mov dl, [manzana] ; tercera manzana 
     int 21h 
     ret
+imprimirManzanas endp 
 
 LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE 
     mov ah, 00h
@@ -224,9 +244,10 @@ LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE
     jne izquierda    
     cmp cabeza, 'v'
     je retrocedio
-    mov cabeza, '^'    
+    mov cabeza, '^'     
     call moverArriba
-    call validarArr     
+    call validarArr   
+    call comp1                
     ret
 izquierda: 
     cmp al, 'a'
@@ -235,7 +256,8 @@ izquierda:
     je retrocedio 
     mov cabeza, '<'
     call moverIzquierda
-    call validarIzq     
+    call validarIzq   
+    call comp1        
     ret
 derecha: 
     cmp al, 'd'
@@ -244,7 +266,8 @@ derecha:
     je retrocedio 
     mov cabeza, '>' 
     call moverDerecha   
-    call validarDer    
+    call validarDer   
+    call comp1    
     ret 
 abajo:
     cmp al, 's'
@@ -253,10 +276,11 @@ abajo:
     je retrocedio 
     mov cabeza, 'v'
     call moverAbajo
-    call validarAb     
+    call validarAb 
+    call comp1       
     ret         
 retrocedio:  
-    cmp al, 'x' 
+    cmp al, 'X' 
     je salir
     ret 
 salir: 
@@ -379,13 +403,13 @@ validarArr:
     je terminaJuego ; valida el choque contra la pared 
     mov ah, 02h 
     mov dl, posx 
-    mov dh, posy 
-    dec dh     
+    mov dh, posy     
+    dec dh
     int 10h ; poner cursor en la cabeza 
     mov ah, 08h ; interrupcion 10h para leer contenido del cursor 
     int 10h 
     cmp al, [cuerpo] ; la serpiente choca contra su cuerpo 
-    je terminaJuego     
+    je terminaJuego  
     ret 
 validarAb: 
     mov bl, y 
@@ -433,12 +457,24 @@ validacion endp
 terminaJuego: 
     mov ax, 0003H ;clearing the screen 
     int 10H     
-    mov ah, 09h 
+    mov ah, 09h     
     lea dx, salida
     int 21h 
     jmp FIN 
 
-validar_cola proc
+validarManzanas proc 
+comp1:     
+    mov dl, posx     
+    cmp dl, 4
+    je comp2
+    ret 
+comp2: 
+    mov dh, posy 
+    cmp dh, 4
+    je terminaJuego 
+validarManzanas endp 
+
+validar_cola proc 
 colaDer:
     mov ah, 02h 
     mov dl, xcola
