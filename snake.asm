@@ -3,6 +3,10 @@
     bienvenida db 'PROYECTO MICROPROGRAMACION: Snake $'
     instrucciones db 'USE LAS TECLAS: A, S, D W $'
     dimensiones db 'LAS DIMENSIONES INGRESADAS SON INCORRECTAS. $'
+    msg db 'MOVIMIENTO INVALIDO$'
+    clean db '                   $'
+    msgx db 1h 
+    msgy db 0h 
     cerrar db 'HA CERRADO EL JUEGO.$'
     salida db 'PERDISTE$'
     cadena1 db  "Ingrese X: $";ingrese coordenada x
@@ -156,7 +160,6 @@ ciclo:
     call LeerKbd       
     jmp ciclo  
     ;CICLO PRINCIPAL ---------------------------------------------------------------------------------------------------
-  
 imprimir_cuerpo:
     ;Imprimir el cuerpo inicial de la serpiente que sean 4 unidades a la izquierda
     ;Obtengo las posiciones para imprimir el cuerpo de la serpiente
@@ -182,7 +185,6 @@ imprimir_cuerpo:
         int 10h
         loop ciclo_imprimir_cuerpo
         ret   
-    
 FILA:     
     mov ah, 02h         
     mov dh, i 
@@ -194,7 +196,6 @@ FILA:
     inc j
     loop FILA
     ret 
-
 COLUMNA: 
     mov ah, 02h         
     mov dh, i 
@@ -206,7 +207,6 @@ COLUMNA:
     inc i
     loop COLUMNA  
     ret  
-
 imprimirManzanas proc 
     mov bl, [x]    
     mov [right], bl 
@@ -238,7 +238,7 @@ imprimirManzanas proc
     ret
 imprimirManzanas endp 
 
-LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE 
+LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE     
     mov ah, 00h
     int 16h; lee sin imprimir el caracter ingresado 
     cmp al, 'w'
@@ -252,8 +252,9 @@ LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE
     call comp3
     call comp5
     call comp7
+    call limpiar
     ret
-izquierda: 
+izquierda:     
     cmp al, 'a'
     jne derecha
     cmp cabeza, '>'
@@ -265,10 +266,11 @@ izquierda:
     call comp3    
     call comp5
     call comp7
+    call limpiar
     ret
 checkRetro: 
     jmp retrocedio 
-derecha: 
+derecha:     
     cmp al, 'd'
     jne abajo 
     cmp cabeza, '<'
@@ -280,8 +282,9 @@ derecha:
     call comp3 
     call comp5
     call comp7 
+    call limpiar
     ret 
-abajo:
+abajo:    
     cmp al, 's'
     jne retrocedio 
     cmp cabeza, '^'
@@ -293,10 +296,18 @@ abajo:
     call comp3  
     call comp5
     call comp7   
+    call limpiar
     ret         
 retrocedio:  
     cmp al, 'X' 
     je salir
+    mov ah, 02h 
+    mov dh, [msgy]
+    mov dl, [msgx]
+    int 10h ; posicionar cursor 
+    mov ah, 09
+    lea dx, [msg]
+    int 21h 
     ret 
 salir: 
     mov ax, 0003H ;clearing the screen 
@@ -750,6 +761,17 @@ SALTOLINEA proc
     XOR AX, AX 
     ret   
 SALTOLINEA endp
+
+limpiar proc 
+    mov ah, 02h 
+    mov dh, [msgy]
+    mov dl, [msgx]
+    int 10h ;colocar cursor 
+    mov ah, 09
+    lea dx, [clean]
+    int 21h 
+    ret
+limpiar endp 
 
 dim proc far 
     lea dx, dimensiones
