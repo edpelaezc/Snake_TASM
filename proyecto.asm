@@ -10,12 +10,12 @@
     pared db 219
     cabeza db '>'  
     cuerpo db 'O'   
-    manzana db 207  
+    manzana db 254  
     right db ?     
     bottom  db ?     
     checkx db ? 
     checky db ? 
-    long db 9
+    long db 4
     posx db ? 
     posy db ? 
     xa db ? 
@@ -243,11 +243,14 @@ LeerKbd proc ;LEER ENTRADA DEL TECLADO PARA MOVIMIENTO DE LA SERPIENTE
     cmp al, 'w'
     jne izquierda    
     cmp cabeza, 'v'
-    je retrocedio
+    je checkRetro
     mov cabeza, '^'     
     call moverArriba
     call validarArr   
     call comp1                
+    call comp3
+    call comp5
+    call comp7
     ret
 izquierda: 
     cmp al, 'a'
@@ -257,8 +260,13 @@ izquierda:
     mov cabeza, '<'
     call moverIzquierda
     call validarIzq   
-    call comp1        
+    call comp1    
+    call comp3    
+    call comp5
+    call comp7
     ret
+checkRetro: 
+    jmp retrocedio 
 derecha: 
     cmp al, 'd'
     jne abajo 
@@ -267,7 +275,10 @@ derecha:
     mov cabeza, '>' 
     call moverDerecha   
     call validarDer   
-    call comp1    
+    call comp1  
+    call comp3 
+    call comp5
+    call comp7 
     ret 
 abajo:
     cmp al, 's'
@@ -277,7 +288,10 @@ abajo:
     mov cabeza, 'v'
     call moverAbajo
     call validarAb 
-    call comp1       
+    call comp1  
+    call comp3  
+    call comp5
+    call comp7   
     ret         
 retrocedio:  
     cmp al, 'X' 
@@ -468,10 +482,41 @@ comp1:
     cmp dl, 4
     je comp2
     ret 
-comp2: 
+comp2: ; comp1 y comp2 para comparar ambas coordenadas de manzana 1  
     mov dh, posy 
     cmp dh, 4
     je terminaJuego 
+    ret
+comp3:     
+    mov dl, posx     
+    cmp dl, [right]
+    je comp4
+    ret 
+comp4: ;comp3 y comp4 para comparar ambas coordenadas de manzana 2
+    mov dh, posy 
+    cmp dh, 4
+    je terminaJuego 
+    ret
+comp5:     
+    mov dl, posx     
+    cmp dl, [right]
+    je comp6
+    ret 
+comp6: ;comp5 y comp6 para comparar ambas coordenadas de manzana 3
+    mov dh, posy 
+    cmp dh, [bottom]
+    je terminaJuego
+    ret
+comp7:     
+    mov dl, posx     
+    cmp dl, 4
+    je comp8
+    ret 
+comp8: ;comp7 y comp8 para comparar ambas coordenadas de manzana 4
+    mov dh, posy 
+    cmp dh, [bottom]
+    je terminaJuego
+    ret
 validarManzanas endp 
 
 validar_cola proc 
